@@ -1,0 +1,167 @@
+import random
+class Actions:
+    def __init__(self, name, effect, usable=True):
+        self.name = name
+        self.effect = effect
+        self.usable = usable
+
+    def list_actions(self):
+        return f"{self.name}: {self.effect}" if self.usable else f"{self.name} is not usable."
+
+class Spells:
+    def __init__(self, name, effect, uses, max_damage):
+        self.name = name
+        self.effect = effect
+        self.uses = uses
+        self.max_damage = max_damage
+
+    def cast(self):
+        if self.uses > 0:
+            self.uses -= 1
+            damage = random.randint(1, self.max_damage)
+            print(f"{self.name} casts {self.effect} dealing {damage} damage.")
+            return damage
+        else:
+            print(f"{self.name} has no more uses left.")
+            return 0
+
+class Item:
+    def __init__(self, item_type):
+        self.type = item_type
+
+class Weapon(Item):
+    def __init__(self, name, max_damage, strength_mod, size_mod, effect):
+        super().__init__("Weapon")
+        self.name = name
+        self.max_damage = max_damage
+        self.strength_mod = strength_mod
+        self.size_mod = size_mod
+        self.effect = effect
+
+class Armor(Item):
+    def __init__(self, name, damage_reduction, dex_mod, size_mod):
+        super().__init__("Armor")
+        self.name = name
+        self.damage_reduction = damage_reduction
+        self.dex_mod = dex_mod
+        self.size_mod = size_mod
+class Character:
+    def __init__(self, name, gender, health, size, strength, dex):
+        self.name = name
+        self.gender = gender
+        self.health = health
+        self.size = size
+        self.strength = strength
+        self.dex = dex
+        self.weapon = None
+        self.armor = None
+        self.spell = None
+        self.actions = Actions("Basic Attack", "attacks", True)
+
+    def use_action(self):
+        if self.actions.usable:
+            damage = random.randint(1, 6) + self.strength
+            print(f"{self.name} {self.actions.effect} dealing {damage} damage.")
+            return damage
+        else:
+            print(f"{self.actions.name} is not usable.")
+            return 0
+
+    def equip_weapon(self, weapon):
+        self.weapon = weapon
+        print(f"{self.name} equips a {weapon.name} with {weapon.effect} effect.")
+
+    def equip_armor(self, armor):
+        self.armor = armor
+        print(f"{self.name} equips {armor.name} providing {armor.damage_reduction} defense.")
+
+    def equip_spell(self, spell):
+        self.spell = spell
+        print(f"{self.name} learns the spell {spell.name} with {spell.effect} effect.")
+
+    def cast_spell(self):
+        if self.spell and self.spell.uses > 0:
+            return self.spell.cast()
+        else:
+            print(f"{self.name} cannot cast spells or has no spells left.")
+            return 0
+
+# Define the Boss subclass
+class Boss(Character):
+    def __init__(self, name, health, strength, dex, leg_act_count):
+        super().__init__(name, False, health, 10, strength, dex)
+        self.leg_act_count = leg_act_count
+
+    def leg_act(self):
+        if self.leg_act_count > 0:
+            self.leg_act_count -= 1
+            damage = random.randint(1, 12) + self.strength
+            print(f"{self.name} uses a legendary action dealing {damage} damage.")
+            return damage
+        else:
+            print(f"{self.name} has no more legendary actions left.")
+            return 0
+
+# Game execution logic
+class Game:
+    def __init__(self):
+        self.characters = []
+        self.boss = None
+        self.weapons = [Weapon("Sword", 10, 2, 1, "slashes"), Weapon("Axe", 15, 3, 2, "chops")]
+        self.armors = [Armor("Shield", 5, 1, 1), Armor("Chainmail", 10, 2, 3)]
+        self.spells = [Spells("Fireball", "burns", 3, 8), Spells("Ice Spike", "freezes", 3, 6)]
+
+    def create_character(self):
+        name = input("Enter your character's name: ")
+        gender_input = input("Is your character male? (yes/no): ")
+        gender = True if gender_input.lower() == 'yes' else False
+        character = Character(name, gender, 100, 5, 10, 5)
+        character.equip_weapon(random.choice(self.weapons))
+        character.equip_armor(random.choice(self.armors))
+        character.equip_spell(random.choice(self.spells))
+        self.characters.append(character)
+
+    def create_boss(self):
+        self.boss = Boss("Dragon", 200, 20, 10, 3)
+
+    def conduct_battle(self, character):
+        for round_count in range(1, 4):
+            print(f"\n--- Round {round_count} ---")
+            player_damage = character.use_action()
+            self.boss.health -= player_damage
+            if self.boss.health <= 0:
+                print(f"The {self.boss.name} has been defeated!")
+                return True
+
+            boss_damage = self.boss.leg_act()
+            character.health -= boss_damage
+            if character.health <= 0:
+                print(f"{character.name} has been slain.")
+                return False
+
+            print(f"{character.name} Health: {character.health}")
+            print(f"{self.boss.name} Health: {self.boss.health}")
+
+            if round_count < 3:
+                continue_battle = input("Continue fighting? (yes/no): ").lower()
+                if continue_battle != 'yes':
+                    print("Retreating from battle.")
+                    return False
+
+        print("The battle ended after 3 rounds without a final victory.")
+        return False
+
+    def play(self):
+        print("Welcome to the game!")
+        self.create_character()
+        self.create_boss()
+        character = self.characters[0]
+        victory = self.conduct_battle(character)
+        if victory:
+            print(f"Congratulations! {character.name} has triumphed over the {self.boss.name}!")
+        else:
+            print(f" {character.name} has been defeated or has retreated from the battle.")
+
+
+game = Game()
+game.play()
